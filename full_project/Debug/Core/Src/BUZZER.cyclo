@@ -1,0 +1,4 @@
+../Core/Src/BUZZER.c:9:6:BUZZER_TurnOn	1
+../Core/Src/BUZZER.c:13:6:BUZZER_TurnOff	1
+../Core/Src/BUZZER.c:17:6:BUZZER_Toggle	1
+../Core/Src/BUZZER.c:21:6:BUZZER_Beep	2
