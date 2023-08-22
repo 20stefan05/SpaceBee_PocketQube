@@ -10,7 +10,5 @@ void LED_TurnOff(void);
 
 void LED_Toggle(void);
 
-void LED_Blink(int delay, int times);
-
 #endif /* INC_LED_H_ */
 

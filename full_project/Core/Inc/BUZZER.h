@@ -10,7 +10,5 @@ void BUZZER_TurnOff(void);
 
 void BUZZER_Toggle(void);
 
-void BUZZER_Beep(int delay, int times);
-
 #endif /* INC_BUZZER_H_ */
 

@@ -17,10 +17,3 @@ void BUZZER_TurnOff(void){
 void BUZZER_Toggle(void){
     HAL_GPIO_TogglePin(BUZZER_GPIO_PORT, BUZZER_GPIO_PIN);
 }
-
-void BUZZER_Beep(int delay, int times){
-    while(times--){
-        BUZZER_Toggle();
-        HAL_Delay(delay);
-    }
-}
