@@ -17,10 +17,3 @@ void LED_TurnOff(void){
 void LED_Toggle(void){
     HAL_GPIO_TogglePin(LED_GPIO_PORT, LED_GPIO_PIN);
 }
-
-void LED_Blink(int delay, int times){
-    while(times--){
-        LED_Toggle();
-        HAL_Delay(delay);
-    }
-}
