@@ -1,7 +1,7 @@
 #include "LED.h"
 
 #define LED_GPIO_PORT GPIOB
-#define LED_GPIO_PIN GPIO_PIN_3
+#define LED_GPIO_PIN GPIO_PIN_3 // LED GPIO PIN = PB3
 #define ON SET
 #define OFF RESET
 
