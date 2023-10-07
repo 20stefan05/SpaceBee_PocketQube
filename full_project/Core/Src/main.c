@@ -59,6 +59,8 @@ static void MX_I2C1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+//Create BMP180 and MPU6050 objects
 BMP180_t BMP180;
 MPU6050_t MPU6050;
 /* USER CODE END 0 */
@@ -93,6 +95,8 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
+
+  //Initialize BMP180 and MPU6050 objects
   BMP180_Init();
   MPU6050_Init();
   /* USER CODE END 2 */

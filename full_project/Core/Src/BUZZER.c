@@ -1,7 +1,7 @@
 #include "BUZZER.h"
 
 #define BUZZER_GPIO_PORT GPIOA
-#define BUZZER_GPIO_PIN GPIO_PIN_8
+#define BUZZER_GPIO_PIN GPIO_PIN_8 //BUZZER GPIO PIN = PA8
 #define ON SET
 #define OFF RESET
 

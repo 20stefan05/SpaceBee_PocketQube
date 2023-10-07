@@ -38,8 +38,7 @@ double Temp = 0;
 
 #define atmPress 101325 //Pa
 
-
-
+// starts reading the sensor data
 void read_callibration_data (void){
 	uint8_t Callib_Data[22] = {0};
 	uint16_t Callib_Start = 0xAA;
@@ -69,6 +68,7 @@ void Get_UTemp (BMP180_t *Datastruct){
 	Datastruct->Temperature_RAW = ((Temp_RAW[0]<<8) + Temp_RAW[1]);
 }
 
+// Updates the temperature
 void BMP180_Get_Temp (BMP180_t *Datastruct){
 	Get_UTemp(Datastruct);
 	UT = Datastruct->Temperature_RAW;
@@ -80,6 +80,7 @@ void BMP180_Get_Temp (BMP180_t *Datastruct){
 }
 
 // Get uncompensated Pressure
+// oss = oversampling something, currently commented out
 void Get_UPress (BMP180_t *Datastruct, int oss){   // oversampling setting 0,1,2,3
 	uint8_t datatowrite = 0x34+(oss<<6);
 	uint8_t Press_RAW[3] = {0};
@@ -103,7 +104,7 @@ void Get_UPress (BMP180_t *Datastruct, int oss){   // oversampling setting 0,1,2
 	Datastruct->Pressure_RAW = (((Press_RAW[0]<<16)+(Press_RAW[1]<<8)+Press_RAW[2]) >> (8-oss));
 }
 
-
+// Updates the pressure
 void BMP180_Get_Press (BMP180_t *Datastruct, int oss){
 	Get_UPress(Datastruct, oss);
 	UP = Datastruct->Pressure_RAW;
@@ -130,16 +131,18 @@ void BMP180_Get_Press (BMP180_t *Datastruct, int oss){
 	Datastruct->Pressure = Press;
 }
 
-
+// Updates the altitude
 void BMP180_Get_Alt (BMP180_t *Datastruct, int oss){
 	BMP180_Get_Press (Datastruct, oss);
 	Datastruct->Altitude = 44330*(1-(pow((Press/(float)atmPress), 0.19029495718)));
 }
 
+// Starts reading the data from the sensor
 void BMP180_Init (void){
 	read_callibration_data();
 }
 
+// Updates all 3 (Temperature, Altitude, Pressure)
 void BMP180_Read_All (BMP180_t *Datastruct, int oss){
 	BMP180_Get_Temp(Datastruct);
 	BMP180_Get_Alt(Datastruct, oss); //GetAlt calls GetPress
