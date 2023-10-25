@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -45,6 +46,10 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 
+osThreadId BMP180_infoHandle;
+osThreadId MPU6050_infoHandle;
+osThreadId BUZZER_intermitHandle;
+osThreadId LED_intermitHandle;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -53,6 +58,11 @@ I2C_HandleTypeDef hi2c1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
+void BMP180_all(void const * argument);
+void MPU6050_all(void const * argument);
+void BUZZER_blink(void const * argument);
+void LED_blink(void const * argument);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -63,6 +73,10 @@ static void MX_I2C1_Init(void);
 //Create BMP180 and MPU6050 objects
 BMP180_t BMP180;
 MPU6050_t MPU6050;
+
+//Define the state as an enum
+enum state{NOMINAL, SAFE};
+enum state current_state;
 /* USER CODE END 0 */
 
 /**
@@ -98,9 +112,57 @@ int main(void)
 
   //Initialize BMP180 and MPU6050 objects
   BMP180_Init();
-  MPU6050_Init();
+  int answer = MPU6050_Init(); //if MPU6050_Init returns 0, everything is fine
+
+  //Define the state
+  if(answer == 0){
+	  current_state = NOMINAL;
+  } else {
+	  current_state = SAFE;
+  }
+
   /* USER CODE END 2 */
 
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* definition and creation of BMP180_info */
+  osThreadDef(BMP180_info, BMP180_all, osPriorityNormal, 0, 128);
+  BMP180_infoHandle = osThreadCreate(osThread(BMP180_info), NULL);
+
+  /* definition and creation of MPU6050_info */
+  osThreadDef(MPU6050_info, MPU6050_all, osPriorityNormal, 0, 128);
+  MPU6050_infoHandle = osThreadCreate(osThread(MPU6050_info), NULL);
+
+  /* definition and creation of BUZZER_intermit */
+  osThreadDef(BUZZER_intermit, BUZZER_blink, osPriorityNormal, 0, 128);
+  BUZZER_intermitHandle = osThreadCreate(osThread(BUZZER_intermit), NULL);
+
+  /* definition and creation of LED_intermit */
+  osThreadDef(LED_intermit, LED_blink, osPriorityNormal, 0, 128);
+  LED_intermitHandle = osThreadCreate(osThread(LED_intermit), NULL);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* USER CODE END RTOS_THREADS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -108,11 +170,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  BMP180_Read_All(&BMP180, 0);
-	  MPU6050_Read_All(&MPU6050);
-	  LED_Toggle();
-	  BUZZER_Toggle();
-	  HAL_Delay(50);
   }
   /* USER CODE END 3 */
 }
@@ -262,6 +319,94 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_BMP180_all */
+/**
+  * @brief  Function implementing the BMP180_info thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_BMP180_all */
+void BMP180_all(void const * argument)
+{
+  /* USER CODE BEGIN 5 */
+	if(current_state == SAFE){
+		vTaskSuspend(NULL);
+	}
+  /* Infinite loop */
+  for(;;)
+  {
+	BMP180_Read_All(&BMP180, 0);
+    osDelay(50);
+  }
+  /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_MPU6050_all */
+/**
+* @brief Function implementing the MPU6050_info thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_MPU6050_all */
+void MPU6050_all(void const * argument)
+{
+  /* USER CODE BEGIN MPU6050_all */
+	if(current_state == SAFE){
+		vTaskSuspend(NULL);
+	}
+  /* Infinite loop */
+  for(;;)
+  {
+	MPU6050_Read_Accel(&MPU6050);
+    osDelay(50);
+  }
+  /* USER CODE END MPU6050_all */
+}
+
+/* USER CODE BEGIN Header_BUZZER_blink */
+/**
+* @brief Function implementing the BUZZER_intermit thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_BUZZER_blink */
+void BUZZER_blink(void const * argument)
+{
+  /* USER CODE BEGIN BUZZER_blink */
+  /* Infinite loop */
+  for(;;)
+  {
+	if(current_state == SAFE){
+		BUZZER_Toggle();
+		osDelay(500);
+	}
+  }
+  /* USER CODE END BUZZER_blink */
+}
+
+/* USER CODE BEGIN Header_LED_blink */
+/**
+* @brief Function implementing the LED_intermit thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_LED_blink */
+void LED_blink(void const * argument)
+{
+  /* USER CODE BEGIN LED_blink */
+  /* Infinite loop */
+  for(;;)
+  {
+	if(current_state == SAFE){
+		LED_Toggle();
+		osDelay(500);
+	} else if(current_state == NOMINAL){
+		LED_TurnOn();
+	}
+  }
+  /* USER CODE END LED_blink */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
