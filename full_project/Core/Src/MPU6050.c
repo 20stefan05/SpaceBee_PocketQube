@@ -1,6 +1,6 @@
 #include <math.h>
 #include <MPU6050.h>
-
+#include "stm32l4xx_hal.h"
 #define RAD_TO_DEG 57.295779513082320876798154814105
 
 #define WHO_AM_I_REG 0x75
@@ -68,7 +68,7 @@ void MPU6050_Read_Accel(MPU6050_t *DataStruct){
 
     // Read 6 BYTES of data starting from ACCEL_XOUT_H register
 
-    HAL_I2C_Mem_Read(MPU6050_I2C, MPU6050_ADDR, ACCEL_XOUT_H_REG, 1, Rec_Data, 6, i2c_timeout);
+    HAL_StatusTypeDef h_status = HAL_I2C_Mem_Read(MPU6050_I2C, MPU6050_ADDR, ACCEL_XOUT_H_REG, 1, Rec_Data, 6, i2c_timeout);
 
     DataStruct->Accel_X_RAW = (int16_t)(Rec_Data[0] << 8 | Rec_Data[1]);
     DataStruct->Accel_Y_RAW = (int16_t)(Rec_Data[2] << 8 | Rec_Data[3]);

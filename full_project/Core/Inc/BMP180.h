@@ -1,9 +1,9 @@
 #ifndef _BMP180_H_
 #define _BMP180_H_
+#include <stdint.h>
 
-#include "main.h"
 
-// MPU6050 structure
+// BMP180 structure
 typedef struct {
 	uint16_t Temperature_RAW;
 	uint32_t Pressure_RAW;

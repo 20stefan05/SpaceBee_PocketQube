@@ -2,7 +2,6 @@
 #define INC_GY521_H_
 
 #include <stdint.h>
-#include "main.h"
 
 // MPU6050 structure
 typedef struct {

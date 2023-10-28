@@ -1,6 +1,6 @@
 #include "BMP180.h"
 #include "math.h"
-
+#include "main.h"
 extern I2C_HandleTypeDef hi2c1;
 #define BMP180_I2C &hi2c1
 #define BMP180_ADDRESS 0xEE
@@ -38,11 +38,13 @@ double Temp = 0;
 
 #define atmPress 101325 //Pa
 
+
+
 // starts reading the sensor data
 void read_callibration_data (void){
 	uint8_t Callib_Data[22] = {0};
 	uint16_t Callib_Start = 0xAA;
-	HAL_I2C_Mem_Read(BMP180_I2C, BMP180_ADDRESS, Callib_Start, 1, Callib_Data, 22, HAL_MAX_DELAY);
+	HAL_StatusTypeDef hal_stat = HAL_I2C_Mem_Read(BMP180_I2C, BMP180_ADDRESS, Callib_Start, 1, Callib_Data, 22, HAL_MAX_DELAY);
 
 	AC1 = ((Callib_Data[0] << 8) | Callib_Data[1]);
 	AC2 = ((Callib_Data[2] << 8) | Callib_Data[3]);
@@ -62,9 +64,9 @@ void read_callibration_data (void){
 void Get_UTemp (BMP180_t *Datastruct){
 	uint8_t datatowrite = 0x2E;
 	uint8_t Temp_RAW[2] = {0};
-	HAL_I2C_Mem_Write(BMP180_I2C, BMP180_ADDRESS, 0xF4, 1, &datatowrite, 1, 1000);
+	HAL_StatusTypeDef hal_stat_wr = HAL_I2C_Mem_Write(BMP180_I2C, BMP180_ADDRESS, 0xF4, 1, &datatowrite, 1, 1000);
 	HAL_Delay (5);  // wait 4.5 ms
-	HAL_I2C_Mem_Read(BMP180_I2C, BMP180_ADDRESS, 0xF6, 1, Temp_RAW, 2, 1000);
+	HAL_StatusTypeDef hal_stat = HAL_I2C_Mem_Read(BMP180_I2C, BMP180_ADDRESS, 0xF6, 1, Temp_RAW, 2, 1000);
 	Datastruct->Temperature_RAW = ((Temp_RAW[0]<<8) + Temp_RAW[1]);
 }
 
