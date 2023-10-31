@@ -1,0 +1,6 @@
+../Core/Src/File_Handling.c:29:6:Mount_SD	16	static
+../Core/Src/File_Handling.c:34:6:Unmount_SD	16	static
+../Core/Src/File_Handling.c:40:9:Write_File	16	static
+../Core/Src/File_Handling.c:73:9:Read_File	24	static
+../Core/Src/File_Handling.c:110:9:Create_File	16	static
+../Core/Src/File_Handling.c:130:9:Update_File	16	static

@@ -10,85 +10,31 @@
 #include "MPU6050.h"
 #include "INA219.h"
 #include "fatfs.h"
-//void init_SD_card(void) {
-//	FATFS FatFs;                //Fatfs handle
-//	FIL fil;                  //File handle
-//	FRESULT fres;                 //Result after operations
-//	char buf[100];
-//
-//	do {
-//		//Mount the SD Card
-//		fres = f_mount(&FatFs, "", 1);    //1=mount now
-//		if (fres != FR_OK) {
-//			break;
-//		}
-//
-//		//Read the SD Card Total size and Free Size
-//		FATFS *pfs;
-//		DWORD fre_clust;
-//		uint32_t totalSpace, freeSpace;
-//
-//		f_getfree("", &fre_clust, &pfs);
-//		totalSpace = (uint32_t) ((pfs->n_fatent - 2) * pfs->csize * 0.5);
-//		freeSpace = (uint32_t) (fre_clust * pfs->csize * 0.5);
-//
-//		//Open the file
-//		fres = f_open(&fil, "Mission1_Data.csv",
-//				FA_WRITE | FA_READ | FA_CREATE_ALWAYS);
-//		if (fres != FR_OK) {
-//			break;
-//		}
-//
-//		//write the data
-//		f_puts("Temperature, Pressure, Altitude, Acceleration\n", &fil);
-//
-//		//close your file
-//		f_close(&fil);
-//
-//
-//	} while (0);
-//
-//	//We're done, so de-mount the drive
-//	f_mount(NULL, "", 0);
-//}
+#include "File_Handling.h"
+void init_SD_card(void) {
+	Mount_SD("/");
+	Create_File("Mission1.csv");
+	Update_File("Mission1.csv", "Temperature, Pressure, Ax, Ay, Az\n");
+	//Unmount_SD("/");
+
+}
+char buf[100];
+int indx = 1;
 void process_SD_card(MPU6050_t *MPU6050, BMP180_t *BMP180, INA219_t *INA219) {
-	FATFS FatFs;                //Fatfs handle
-	FIL fil;                  //File handle
-	FRESULT fres;                 //Result after operations
-	char buf[100];
-
-	do {
-		//Mount the SD Card
-		fres = f_mount(&FatFs, "", 1);    //1=mount now
-		if (fres != FR_OK) {
-			break;
-		}
-
-		//Read the SD Card Total size and Free Size
-		FATFS *pfs;
-		DWORD fre_clust;
-		uint32_t totalSpace, freeSpace;
-
-		f_getfree("", &fre_clust, &pfs);
-		totalSpace = (uint32_t) ((pfs->n_fatent - 2) * pfs->csize * 0.5);
-		freeSpace = (uint32_t) (fre_clust * pfs->csize * 0.5);
-
-		//Open the file
-		fres = f_open(&fil, "Mission1_Data.csv",
-				FA_WRITE | FA_READ | FA_CREATE_ALWAYS);
-		if (fres != FR_OK) {
-			break;
-		}
-
-		//write the data
-		f_puts("Temperature, Pressure, Altitude, Acceleration\n", &fil);
-
-		//close your file
-		f_close(&fil);
-
-
-	} while (0);
-
-	//We're done, so de-mount the drive
-	f_mount(NULL, "", 0);
+	int dec[5], frac[5];
+	dec[0] = (int)BMP180->Temperature;
+	frac[0] = (abs(BMP180->Temperature)-abs(dec[0]))*1000;
+	dec[1] = (int)BMP180->Pressure;
+	frac[1] = (abs(BMP180->Pressure)-abs(dec[1]))*1000;
+	dec[2] = (int)MPU6050->Ax;
+	frac[2] = (abs(MPU6050->Ax)-abs(dec[2]))*1000;
+	dec[3] = (int)MPU6050->Ay;
+	frac[3] = (abs(MPU6050->Ay)-abs(dec[3]))*1000;
+	dec[4] = (int)MPU6050->Az;
+	frac[4] = (abs(MPU6050->Az)-abs(dec[4]))*1000;
+	sprintf(buf, "%d.%d, %d.%d, %d.%d, %d.%d, %d.%d\n", dec[0], frac[0], dec[1], frac[1], dec[2], frac[2], dec[3], frac[3], dec[4], frac[4]);
+	Mount_SD("/");
+	Update_File("Mission1.csv", buf);
+	Unmount_SD("/");
+	indx++;
 }

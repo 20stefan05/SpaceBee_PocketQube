@@ -36,6 +36,7 @@
 #include <string.h>
 #include "ff_gen_drv.h"
 #include <fatfs_sd_card.h>
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 
@@ -115,7 +116,7 @@ DRESULT USER_read (
 )
 {
   /* USER CODE BEGIN READ */
-	return SD_disk_read(pdrv, buff, sector, count);
+	 return SD_disk_read(pdrv, buff, sector, count);
   /* USER CODE END READ */
 }
 
@@ -157,7 +158,7 @@ DRESULT USER_ioctl (
 )
 {
   /* USER CODE BEGIN IOCTL */
-	return SD_disk_ioctl(pdrv, cmd, buff);
+    return SD_disk_ioctl(pdrv, cmd, buff);
   /* USER CODE END IOCTL */
 }
 #endif /* _USE_IOCTL == 1 */

@@ -1,1 +1,2 @@
-../Core/Src/SD_Handler.c:54:6:process_SD_card	8448	static
+../Core/Src/SD_Handler.c:14:6:init_SD_card	8	static
+../Core/Src/SD_Handler.c:23:6:process_SD_card	120	static

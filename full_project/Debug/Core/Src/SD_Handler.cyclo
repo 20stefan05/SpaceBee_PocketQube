@@ -1,1 +1,2 @@
-../Core/Src/SD_Handler.c:54:6:process_SD_card	3
+../Core/Src/SD_Handler.c:14:6:init_SD_card	1
+../Core/Src/SD_Handler.c:23:6:process_SD_card	1

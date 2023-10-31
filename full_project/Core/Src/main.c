@@ -1,24 +1,23 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2023 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2023 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
 #include "fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -28,6 +27,7 @@
 #include "LED.h"
 #include "BUZZER.h"
 #include "INA219.h"
+#include "File_Handling.h"
 #include "SD_Handler.h"
 /* USER CODE END Includes */
 
@@ -52,11 +52,6 @@ I2C_HandleTypeDef hi2c3;
 
 SPI_HandleTypeDef hspi1;
 
-osThreadId BMP180_infoHandle;
-osThreadId MPU6050_infoHandle;
-osThreadId BUZZER_intermitHandle;
-osThreadId LED_intermitHandle;
-osThreadId SD_Handle_taskHandle;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -67,12 +62,6 @@ static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_I2C3_Init(void);
-void BMP180_all(void const * argument);
-void MPU6050_all(void const * argument);
-void BUZZER_blink(void const * argument);
-void LED_blink(void const * argument);
-void SD_Handle(void const * argument);
-
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -84,9 +73,10 @@ void SD_Handle(void const * argument);
 BMP180_t BMP180;
 MPU6050_t MPU6050;
 INA219_t INA219;
-
 //Define the state as an enum
-enum state{NOMINAL, SAFE};
+enum state {
+	NOMINAL, SAFE
+};
 enum state current_state;
 /* USER CODE END 0 */
 
@@ -120,75 +110,39 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C1_Init();
   MX_SPI1_Init();
-  MX_FATFS_Init();
   MX_I2C3_Init();
+  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 
-  //Initialize BMP180 and MPU6050 objects
-  BMP180_Init();
-  int answer = MPU6050_Init(); //if MPU6050_Init returns 0, everything is fine
+	//Initialize BMP180 and MPU6050 objects
+	BMP180_Init();
+	int answer = MPU6050_Init(); //if MPU6050_Init returns 0, everything is fine
 
-  //Define the state
-  if(answer == 0){
-	  current_state = NOMINAL;
-  } else {
-	  current_state = SAFE;
-  }
-
+	//Define the state
+	if (answer == 0) {
+		current_state = NOMINAL;
+	} else {
+		current_state = SAFE;
+	}
+	init_SD_card();
+	LED_TurnOn();
+	BUZZER_TurnOn();
+	HAL_Delay(1000);
+	BUZZER_TurnOff();
   /* USER CODE END 2 */
 
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
-
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
-
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
-
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
-
-  /* Create the thread(s) */
-  /* definition and creation of BMP180_info */
-  osThreadDef(BMP180_info, BMP180_all, osPriorityNormal, 0, 1024);
-  BMP180_infoHandle = osThreadCreate(osThread(BMP180_info), NULL);
-
-  /* definition and creation of MPU6050_info */
-  osThreadDef(MPU6050_info, MPU6050_all, osPriorityNormal, 0, 1024);
-  MPU6050_infoHandle = osThreadCreate(osThread(MPU6050_info), NULL);
-
-  /* definition and creation of BUZZER_intermit */
-  osThreadDef(BUZZER_intermit, BUZZER_blink, osPriorityNormal, 0, 128);
-  BUZZER_intermitHandle = osThreadCreate(osThread(BUZZER_intermit), NULL);
-
-  /* definition and creation of LED_intermit */
-  osThreadDef(LED_intermit, LED_blink, osPriorityNormal, 0, 128);
-  LED_intermitHandle = osThreadCreate(osThread(LED_intermit), NULL);
-
-  /* definition and creation of SD_Handle_task */
-  osThreadDef(SD_Handle_task, SD_Handle, osPriorityNormal, 0, 4096);
-  SD_Handle_taskHandle = osThreadCreate(osThread(SD_Handle_task), NULL);
-
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* USER CODE END RTOS_THREADS */
-
-  /* Start scheduler */
-  osKernelStart();
-
-  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+	while (1) {
+		BMP180_Read_All(&BMP180, 0);
+		MPU6050_Read_Accel(&MPU6050);
+		MPU6050_Read_Temp(&MPU6050);
+		process_SD_card(&MPU6050, &BMP180, &INA219);
+		HAL_Delay(20);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+	}
   /* USER CODE END 3 */
 }
 
@@ -428,114 +382,6 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE END 4 */
 
-/* USER CODE BEGIN Header_BMP180_all */
-/**
-  * @brief  Function implementing the BMP180_info thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-/* USER CODE END Header_BMP180_all */
-void BMP180_all(void const * argument)
-{
-  /* USER CODE BEGIN 5 */
-	if(current_state == SAFE){
-		vTaskSuspend(NULL);
-	}
-  /* Infinite loop */
-  for(;;)
-  {
-	BMP180_Read_All(&BMP180, 0);
-    osDelay(50);
-  }
-  /* USER CODE END 5 */
-}
-
-/* USER CODE BEGIN Header_MPU6050_all */
-/**
-* @brief Function implementing the MPU6050_info thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_MPU6050_all */
-void MPU6050_all(void const * argument)
-{
-  /* USER CODE BEGIN MPU6050_all */
-	if(current_state == SAFE){
-		vTaskSuspend(NULL);
-	}
-  /* Infinite loop */
-  for(;;)
-  {
-	MPU6050_Read_Accel(&MPU6050);
-    osDelay(50);
-  }
-  /* USER CODE END MPU6050_all */
-}
-
-/* USER CODE BEGIN Header_BUZZER_blink */
-/**
-* @brief Function implementing the BUZZER_intermit thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_BUZZER_blink */
-void BUZZER_blink(void const * argument)
-{
-  /* USER CODE BEGIN BUZZER_blink */
-  /* Infinite loop */
-  for(;;)
-  {
-	if(current_state == SAFE){
-		BUZZER_Toggle();
-		osDelay(500);
-	}
-  }
-  /* USER CODE END BUZZER_blink */
-}
-
-/* USER CODE BEGIN Header_LED_blink */
-/**
-* @brief Function implementing the LED_intermit thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_LED_blink */
-void LED_blink(void const * argument)
-{
-  /* USER CODE BEGIN LED_blink */
-  /* Infinite loop */
-  for(;;)
-  {
-	if(current_state == SAFE){
-		LED_Toggle();
-		osDelay(500);
-	} else if(current_state == NOMINAL){
-		LED_TurnOn();
-	}
-  }
-  /* USER CODE END LED_blink */
-}
-
-/* USER CODE BEGIN Header_SD_Handle */
-/**
-* @brief Function implementing the SD_Handle_task thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_SD_Handle */
-void SD_Handle(void const * argument)
-{
-  /* USER CODE BEGIN SD_Handle */
-	/* Infinite loop */
-	for (;;) {
-		if (current_state == NOMINAL) {
-			process_SD_card(&MPU6050, &BMP180, &INA219);
-		}
-		osDelay(20);
-	}
-  /* USER CODE END SD_Handle */
-}
-
 /**
   * @brief  This function is executed in case of error occurrence.
   * @retval None
@@ -543,11 +389,10 @@ void SD_Handle(void const * argument)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+	/* User can add his own implementation to report the HAL error return state */
+	__disable_irq();
+	while (1) {
+	}
   /* USER CODE END Error_Handler_Debug */
 }
 
